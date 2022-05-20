@@ -6,6 +6,7 @@ const bundlePath = path.join(__dirname, 'project-dist', 'bundle.css');
 
 async function mergeStyles() {
   try {
+    let data = '';
     fsPromises.writeFile(bundlePath, ' ');
     const stylesFolderFiles = await fsPromises.readdir(stylesFolder, { withFileTypes: true });
     for (const file of stylesFolderFiles) {
@@ -14,13 +15,16 @@ async function mergeStyles() {
         if (err) throw err;
         if (file.isFile() && extName == 'css') {
           const readStream = fs.createReadStream(path.join(__dirname, 'styles', file.name));
-          readStream.on('data', (chunk) => {
-            fsPromises.appendFile(bundlePath, chunk.toString());
+          readStream.on('data', function (chunk) {
+            data += chunk.toString();
+          });
+          readStream.on('end', function () {
+            fsPromises.appendFile(bundlePath, data.toString());
           });
         }
       });
     }
-    console.log('All styles added to bundle');
+    console.log('\x1b[33m', 'All styles added to bundle', '\x1b[0m');
   } catch (err) {
     console.log(err);
   }

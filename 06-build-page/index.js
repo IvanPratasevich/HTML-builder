@@ -33,6 +33,7 @@ async function copyLayout() {
 
 async function mergeStyles() {
   try {
+    let data = '';
     fsPromises.writeFile(bundlePath, ' ');
     const stylesFolderFiles = await fsPromises.readdir(stylesFolder, { withFileTypes: true });
     for (const file of stylesFolderFiles) {
@@ -41,8 +42,11 @@ async function mergeStyles() {
         if (err) throw err;
         if (file.isFile() && extName == 'css') {
           const readStream = fs.createReadStream(path.join(__dirname, 'styles', file.name));
-          readStream.on('data', (chunk) => {
-            fsPromises.appendFile(bundlePath, chunk.toString());
+          readStream.on('data', function (chunk) {
+            data += chunk.toString();
+          });
+          readStream.on('end', function () {
+            fsPromises.appendFile(bundlePath, data.toString());
           });
         }
       });
@@ -57,10 +61,10 @@ async function copyDirectory(src, destination) {
   try {
     const items = await fsPromises.readdir(src, { withFileTypes: true });
     await fsPromises.mkdir(destination);
-    for (let i = 0; i < items.length; i++) {
-      const srcPath = path.join(src, items[i].name);
-      const destinationPath = path.join(destination, items[i].name);
-      if (items[i].isDirectory()) {
+    for (const item of items) {
+      const srcPath = path.join(src, item.name);
+      const destinationPath = path.join(destination, item.name);
+      if (item.isDirectory()) {
         await copyDirectory(srcPath, destinationPath);
       } else {
         await fsPromises.copyFile(srcPath, destinationPath);
